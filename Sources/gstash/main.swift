@@ -1,11 +1,17 @@
 //
-//  File.swift
+//  main.swift
 //  
 //
 //  Created by Shota Shimazu on 2022/07/05.
 //
 
 import Foundation
+
+
+let workingDir = "\(NSHomeDirectory())/.gstash"
+
+let fileManager = FileManager.default
+
 
 print("THIS PROGRAM IS NOW UNDER CONSTRUCTION!")
 prepareWorkDir()

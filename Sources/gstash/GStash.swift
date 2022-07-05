@@ -1,14 +1,10 @@
 import Foundation
 
 
-let homeDir = NSHomeDirectory()
-
-let fileManager = FileManager.default
-
 func prepareWorkDir() {
     var isDirExists = ObjCBool(true)
 
-    fileManager.fileExists(atPath: "\(homeDir)/.gstash", isDirectory: &isDirExists)
+    fileManager.fileExists(atPath: workingDir, isDirectory: &isDirExists)
 
     print(homeDir)
 
@@ -19,7 +15,7 @@ func prepareWorkDir() {
     print("Initializing Global Stash System...")
     
     do {
-        try fileManager.createDirectory(atPath: "\(homeDir)/.gstash", withIntermediateDirectories: true, attributes: nil)
+        try fileManager.createDirectory(atPath: workingDir, withIntermediateDirectories: true, attributes: nil)
     } catch {
         print("Failed to create and initialize workspace.")
     }
