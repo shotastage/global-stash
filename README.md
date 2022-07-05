@@ -1,3 +1,3 @@
-# Global Stash
+# gstash
 
->> Now under construction...
+A description of this package.
