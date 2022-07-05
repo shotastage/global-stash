@@ -1,3 +1,5 @@
-# gstash
+# Global Stash
 
-A description of this package.
+>> Now under construction...
+
+A git like `stash` command for any files and anywhere.
