@@ -17,18 +17,14 @@ let workingDir = "\(NSHomeDirectory())/.gstash"
 let fileManager = FileManager.default
 
 
-class StashDatabase {
-    let db: Connection?
+open class StashDatabase {
+    var db: Connection
 
-    init() {
+    public init?() {
         do {
             db = try Connection("\(workingDir)/\(dbFile)")
         } catch {
-            db = nil
+            return nil
         }
-    }
-
-    func initialize() {
-    
     }
 }

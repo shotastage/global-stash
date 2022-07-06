@@ -1,5 +1,13 @@
 import Foundation
+import StashKit
 
+
+
+func toolInitialize() {
+    prepareWorkDir()
+    
+    let db = try StashDatabase()
+}
 
 func prepareWorkDir() {
 
