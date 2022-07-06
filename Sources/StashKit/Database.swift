@@ -12,12 +12,23 @@ import SQLite
 let dbFile = "stash.db"
 let keys = "keys.db"
 
+let workingDir = "\(NSHomeDirectory())/.gstash"
+
+let fileManager = FileManager.default
+
 
 class StashDatabase {
-    let db = try Connection("\(workingDir)/\(dbFile)")
+    let db: Connection?
+
+    init() {
+        do {
+            db = try Connection("\(workingDir)/\(dbFile)")
+        } catch {
+            db = nil
+        }
+    }
 
     func initialize() {
-        
     
     }
 }

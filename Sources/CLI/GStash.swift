@@ -6,7 +6,6 @@ func prepareWorkDir() {
 
     fileManager.fileExists(atPath: workingDir, isDirectory: &isDirExists)
 
-    print(homeDir)
 
     guard (isDirExists.boolValue == true) else {
         return
