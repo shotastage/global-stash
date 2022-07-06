@@ -19,12 +19,12 @@ let fileManager = FileManager.default
 
 open class StashDatabase {
     var db: Connection
-    var key: Connection
+    var keyConn: Connection
 
     public init?() {
         do {
             db = try Connection("\(workingDir)/\(dbFile)")
-            key = try Connection("\(workingDir)/\(keys)")
+            keyConn = try Connection("\(workingDir)/\(keys)")
         } catch {
             return nil
         }
@@ -41,17 +41,38 @@ open class StashDatabase {
                 t.column(Expression<String>("fhash"))
                 t.column(Expression<String>("fbinary"))
                 t.column(Expression<String>("fmeta"))
-                t.column(Expression<String>("fpermission"))
+                t.column(Expression<Int>("fpermission"))
             })
         } catch {}
 
-        let keys = Table("stashed_files")
+        let keys = Table("keys")
         do {
-            try key.run(keys.create { t in
+            try keyConn.run(keys.create { t in
                 t.column(Expression<Int64>("id"), primaryKey: true)
                 t.column(Expression<String>("keyid"))
                 t.column(Expression<String>("key"))
             })
         } catch {}
+    }
+
+    public func insertStashes(file: String, checksum: String, binary: String, meta: String, permission: Int) throws {
+        let table = Table("stashed_files")
+        let fname = Expression<String>("fname")
+        let fhash = Expression<String>("fhash")
+        let fbinary = Expression<String>("fbinary")
+        let fmeta = Expression<String>("fmeta")
+        let fpermission = Expression<Int>("fpermission")
+        
+        let insert = table.insert(fname <- file, fhash <- checksum, fbinary <- binary, fmeta <- meta,fpermission <- permission)
+        try db.run(insert)
+    }
+
+    public func insertKeys(keyid: String, key: String) throws {
+        let table = Table("keys")
+        let keyid = Expression<String>("keyid")
+        let key = Expression<String>("key")
+
+        let insert = table.insert(keyid <- keyid, key <- key)
+        try keyConn.run(insert)
     }
 }
