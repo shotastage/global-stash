@@ -2,16 +2,12 @@ import Foundation
 
 
 func prepareWorkDir() {
-    var isDirExists = ObjCBool(true)
 
-    fileManager.fileExists(atPath: workingDir, isDirectory: &isDirExists)
-
-
-    guard (isDirExists.boolValue == true) else {
+    guard (FileManager.default.fileExists(atPath: workingDir) == false) else {
         return
     }
 
-    print("Initializing Global Stash System...")
+    print("Initialize Global Stash System (GSS)...")
     
     do {
         try fileManager.createDirectory(atPath: workingDir, withIntermediateDirectories: true, attributes: nil)
