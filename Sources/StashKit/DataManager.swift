@@ -9,9 +9,9 @@ import Foundation
 import CommonCrypto
 
 
-open class FileSecure {
-    
-    public static func calcChecksum(data: Data) -> String {
+open class FileDataManager {
+
+    public func calcChecksum(data: Data) -> String {
         var digest = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
 
         data.withUnsafeBytes { rawPtr in
@@ -20,5 +20,17 @@ open class FileSecure {
         }
  
         return digest.map { String(format: "%02x", $0) }.joined(separator: "")
+    }
+
+    public func readDataFromFile(_ filePath: String) -> Data? {
+        let fileContent: Data?
+
+        do {
+            fileContent = try Data(contentsOf: URL(fileURLWithPath: filePath))
+        } catch {
+            fileContent = nil
+        }
+
+        return fileContent
     }
 }

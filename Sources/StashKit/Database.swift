@@ -33,15 +33,24 @@ open class StashDatabase {
     }
 
     private func prepareTable() {
-        let users = Table("stashed_files")
+        let files = Table("stashed_files")
         do {
-            try db.run(users.create { t in
+            try db.run(files.create { t in
                 t.column(Expression<Int64>("id"), primaryKey: true)
                 t.column(Expression<String>("fname"))
                 t.column(Expression<String>("fhash"))
                 t.column(Expression<String>("fbinary"))
                 t.column(Expression<String>("fmeta"))
                 t.column(Expression<String>("fpermission"))
+            })
+        } catch {}
+
+        let keys = Table("stashed_files")
+        do {
+            try key.run(keys.create { t in
+                t.column(Expression<Int64>("id"), primaryKey: true)
+                t.column(Expression<String>("keyid"))
+                t.column(Expression<String>("key"))
             })
         } catch {}
     }

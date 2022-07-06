@@ -8,6 +8,7 @@
 import Foundation
 
 
+
 let workingDir = "\(NSHomeDirectory())/.gstash"
 
 let fileManager = FileManager.default
@@ -16,10 +17,12 @@ let fileManager = FileManager.default
 print("THIS PROGRAM IS NOW UNDER CONSTRUCTION!")
 toolInitialize()
 
+
 guard CommandLine.arguments.count == 2 else {
     print("Usage: gstash [Stashing file] or [Command Options]")
     exit(1)
 }
+
 
 let givenArg = CommandLine.arguments[1]
 

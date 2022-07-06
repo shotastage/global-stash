@@ -2,7 +2,8 @@ import Foundation
 import StashKit
 
 
-
+// Initialize Command
+//
 func toolInitialize() {
     prepareWorkDir()
 
@@ -27,10 +28,14 @@ func prepareWorkDir() {
     }
 }
 
+
+// Stash Command
 func stash(fname: String) {
     print("Stashing function is now under construction.")
 }
 
+
+// Initialize Command
 func resetAll() {
     let ans = yesNo(message: "Are you sure to delete and reset all stashed data & configuration?")
     
