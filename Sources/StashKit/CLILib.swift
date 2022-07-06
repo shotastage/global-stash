@@ -8,7 +8,26 @@
 import Foundation
 
 
-public func readInput() -> String {
-    let input = FileHandle.standardInput.availableData
-    return NSString(data: input, encoding: String.Encoding.utf8.rawValue)! as String
+public func readInput(message: String = "") -> String {
+
+    if message != "" {
+        print("\(message) : ", terminator: "")
+    }
+
+    return readLine()!
+}
+
+
+public func yesNo(message: String) -> Bool {
+
+    let ans = readInput(message: "\(message) [Y/N]")
+    
+    switch ans {
+    case "Yes", "yes", "Y", "y":
+            return true
+    case "No", "no", "N", "n":
+        return false
+    default:
+        return false
+    }
 }
