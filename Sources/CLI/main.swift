@@ -28,6 +28,8 @@ case "ls":
     print("Listing stashed files is now under construction.")
 case "export":
     print("Exporting stashed file is now under construction.")
+case "reset-all":
+    resetAll()
 default:
     print("Stashing function is now under construction.")
 }
