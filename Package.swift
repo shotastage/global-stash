@@ -37,7 +37,10 @@ let package = Package(
         ),
         .testTarget(
             name: "gstashTests",
-            dependencies: ["StashKit"]
+            dependencies: ["CLI"]
         ),
+        .testTarget(
+            name: "StashKitTests",
+            dependencies: ["StashKit"]),
     ]
 )

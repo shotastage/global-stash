@@ -27,6 +27,10 @@ func prepareWorkDir() {
     }
 }
 
+func stash(fname: String) {
+    print("Stashing function is now under construction.")
+}
+
 func resetAll() {
     let ans = yesNo(message: "Are you sure to delete and reset all stashed data & configuration?")
     

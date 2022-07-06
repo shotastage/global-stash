@@ -31,5 +31,5 @@ case "export":
 case "reset-all":
     resetAll()
 default:
-    print("Stashing function is now under construction.")
+    stash(fname: givenArg)
 }
