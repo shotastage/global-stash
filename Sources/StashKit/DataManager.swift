@@ -9,7 +9,7 @@ import Foundation
 import CommonCrypto
 
 
-open class FileDataManager {
+open class DataManager {
 
     public func calcChecksum(data: Data) -> String {
         var digest = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))

@@ -37,6 +37,7 @@ open class StashDatabase {
         do {
             try db.run(files.create { t in
                 t.column(Expression<Int64>("id"), primaryKey: true)
+                t.column(Expression<String>("fid"))
                 t.column(Expression<String>("fname"))
                 t.column(Expression<String>("fhash"))
                 t.column(Expression<String>("fbinary"))
@@ -55,15 +56,23 @@ open class StashDatabase {
         } catch {}
     }
 
-    public func insertStashes(file: String, checksum: String, binary: String, meta: String, permission: Int) throws {
+    public func insertStashes(id: String, file: String, checksum: String, binary: String, meta: String, permission: Int) throws {
         let table = Table("stashed_files")
+        let fid = Expression<String>("fid")
         let fname = Expression<String>("fname")
         let fhash = Expression<String>("fhash")
         let fbinary = Expression<String>("fbinary")
         let fmeta = Expression<String>("fmeta")
         let fpermission = Expression<Int>("fpermission")
-        
-        let insert = table.insert(fname <- file, fhash <- checksum, fbinary <- binary, fmeta <- meta,fpermission <- permission)
+
+        let insert = table.insert(
+            fid <- fid,
+            fname <- file,
+            fhash <- checksum,
+            fbinary <- binary,
+            fmeta <- meta,
+            fpermission <- permission)
+
         try db.run(insert)
     }
 
