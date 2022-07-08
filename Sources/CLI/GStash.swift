@@ -8,7 +8,7 @@ func toolInitialize() {
     prepareWorkDir()
 
     guard StashDatabase() != nil else {
-        print("Failed to initialize database unit due to unkown issue.")
+        Logger.message("Failed to initialize database unit due to unkown issue.")
         exit(1)
     }
 }
@@ -19,21 +19,14 @@ func prepareWorkDir() {
         return
     }
 
-    print("Initialize Global Stash System (GSS)...")
+    Logger.message("Initialize Global Stash System (GSS)...")
     
     do {
         try fileManager.createDirectory(atPath: workingDir, withIntermediateDirectories: true, attributes: nil)
     } catch {
-        print("Failed to create and initialize workspace.")
+        Logger.message("Failed to create and initialize workspace.")
     }
 }
-
-
-// Stash Command
-func stash(fname: String) {
-    print("Stashing function is now under construction.")
-}
-
 
 // Initialize Command
 func resetAll() {
@@ -43,10 +36,16 @@ func resetAll() {
         do {
             try FileManager.default.removeItem(atPath: workingDir)
         } catch {
-            print("Failed to reset all data!")
+            Logger.message("Failed to reset all data!")
             exit(1)
         }
     } else {
-        print("Canceled to reset.")
+        Logger.message("Canceled to reset.")
     }
+}
+
+func stash(_ filePath: String) {
+    let stasher = StashStore(filePath)
+    
+    stasher.store()
 }

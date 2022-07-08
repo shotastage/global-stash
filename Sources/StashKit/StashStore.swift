@@ -12,7 +12,7 @@ open class StashStore {
 
     var targetData: Data? = nil
     var fileName: String = ""
-    var permission: Int = 0
+    var permission: Int = 5
 
     let manager = DataManager()
     let db = StashDatabase()
@@ -23,6 +23,10 @@ open class StashStore {
 
     public func dataLoaded() {
         targetData = manager.readDataFromFile(fileName)
+        
+        if targetData == nil {
+            Logger.message("Failed to load given data!")
+        }
     }
 
     /// Validate if the read data can be stashed
@@ -41,17 +45,21 @@ open class StashStore {
         dataLoaded()
 
         if !validate() {
-            print("Failed to stash file!")
+            Logger.message("Failed to stash file!")
             exit(1)
         }
 
-        try! db?.insertStashes(
-            id: "",
-            file: fileName,
-            checksum: manager.calcChecksum(data: targetData!),
-            binary: "",
-            meta: "",
-            permission: 100)
-
+        do {
+            try db?.insertStashes(
+                id: "",
+                file: fileName,
+                checksum: manager.calcChecksum(data: targetData!),
+                binary: "",
+                meta: "",
+                permission: 100)
+        } catch {
+            Logger.message("Failed to execute database query.")
+        }
+        
     }
 }

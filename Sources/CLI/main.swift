@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import StashKit
 
 
 
@@ -14,7 +15,7 @@ let workingDir = "\(NSHomeDirectory())/.gstash"
 let fileManager = FileManager.default
 
 
-print("THIS PROGRAM IS NOW UNDER CONSTRUCTION!")
+Logger.log("THIS PROGRAM IS NOW UNDER CONSTRUCTION!")
 toolInitialize()
 
 
@@ -28,11 +29,11 @@ let givenArg = CommandLine.arguments[1]
 
 switch givenArg {
 case "ls":
-    print("Listing stashed files is now under construction.")
+    Logger.message("Listing stashed files is now under construction.")
 case "export":
-    print("Exporting stashed file is now under construction.")
+    Logger.message("Exporting stashed file is now under construction.")
 case "reset-all":
     resetAll()
 default:
-    stash(fname: givenArg)
+    stash(givenArg)
 }

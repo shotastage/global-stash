@@ -23,6 +23,9 @@ open class StashDatabase {
 
     public init?() {
         do {
+            Logger.log("LOAD DATABASE \(workingDir)/\(dbFile)")
+            Logger.log("LOAD DATABASE \(workingDir)/\(keys)")
+
             db = try Connection("\(workingDir)/\(dbFile)")
             keyConn = try Connection("\(workingDir)/\(keys)")
         } catch {
@@ -44,7 +47,9 @@ open class StashDatabase {
                 t.column(Expression<String>("fmeta"))
                 t.column(Expression<Int>("fpermission"))
             })
-        } catch {}
+        } catch {
+            Logger.log("FAILED TO CREATE TABLE stashed_files")
+        }
 
         let keys = Table("keys")
         do {
@@ -53,7 +58,9 @@ open class StashDatabase {
                 t.column(Expression<String>("keyid"))
                 t.column(Expression<String>("key"))
             })
-        } catch {}
+        } catch {
+            Logger.log("FAILED TO CREATE TABLE keys")
+        }
     }
 
     public func insertStashes(id: String, file: String, checksum: String, binary: String, meta: String, permission: Int) throws {
