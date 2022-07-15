@@ -22,6 +22,7 @@ open class StashDatabase {
     var keyConn: Connection
 
     public init?() {
+
         do {
             Logger.log("LOAD DATABASE \(workingDir)/\(dbFile)")
             Logger.log("LOAD DATABASE \(workingDir)/\(keys)")
@@ -29,23 +30,35 @@ open class StashDatabase {
             db = try Connection("\(workingDir)/\(dbFile)")
             keyConn = try Connection("\(workingDir)/\(keys)")
         } catch {
+            Logger.log("FAILED TO ESTABLISH CONNECTIONS!")
             return nil
         }
-        
-        prepareTable()
     }
 
-    private func prepareTable() {
+    let id = Expression<Int64>("id")
+    let fid = Expression<String>("fid")
+    let fname = Expression<String>("fname")
+    let fhash = Expression<String>("fhash")
+    let fbin = Expression<String>("fbin")
+    let fmeta = Expression<String>("fmeta")
+    let fpermission = Expression<Int>("fpermission")
+
+
+    let keyid = Expression<Int64>("id")
+    let keystr = Expression<String>("keystr")
+
+
+    public func prepare() {
         let files = Table("stashed_files")
         do {
             try db.run(files.create { t in
-                t.column(Expression<Int64>("id"), primaryKey: true)
-                t.column(Expression<String>("fid"))
-                t.column(Expression<String>("fname"))
-                t.column(Expression<String>("fhash"))
-                t.column(Expression<String>("fbinary"))
-                t.column(Expression<String>("fmeta"))
-                t.column(Expression<Int>("fpermission"))
+                t.column(id, primaryKey: true)
+                t.column(fid)
+                t.column(fname)
+                t.column(fhash)
+                t.column(fbin)
+                t.column(fmeta)
+                t.column(fpermission)
             })
         } catch {
             Logger.log("FAILED TO CREATE TABLE stashed_files")
@@ -54,9 +67,8 @@ open class StashDatabase {
         let keys = Table("keys")
         do {
             try keyConn.run(keys.create { t in
-                t.column(Expression<Int64>("id"), primaryKey: true)
-                t.column(Expression<String>("keyid"))
-                t.column(Expression<String>("key"))
+                t.column(keyid, primaryKey: true)
+                t.column(keystr)
             })
         } catch {
             Logger.log("FAILED TO CREATE TABLE keys")

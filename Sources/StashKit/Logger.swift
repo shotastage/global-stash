@@ -1,6 +1,6 @@
 //
-//  File.swift
-//  
+//  Logger.swift
+//
 //
 //  Created by Shota Shimazu on 2022/07/08.
 //
@@ -8,7 +8,6 @@
 import Foundation
 
 open class Logger {
-
 
     public static func log(_ msg: String) {
         #if DEBUG
