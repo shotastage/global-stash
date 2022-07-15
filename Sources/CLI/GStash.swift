@@ -11,6 +11,12 @@ func toolInitialize() {
         Logger.message("Failed to initialize database unit due to unkown issue.")
         exit(1)
     }
+
+    do {
+        try StashDatabase()?.prepareSchema()
+    } catch {
+        Logger.log("Table is already exist?")
+    }
 }
 
 func prepareWorkDir() {

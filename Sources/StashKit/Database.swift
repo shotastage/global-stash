@@ -36,14 +36,23 @@ open class StashDatabase {
         }
     }
 
-    func prepareSchema() throws {
+    public func prepareSchema() throws {
         try dbQueue.write { db in
             try db.create(table: "stashes") { t in
                 t.autoIncrementedPrimaryKey("id")
                 t.column("name", .text).notNull()
                 t.column("content", .text).notNull()
+                t.column("meta", .text).notNull()
+                t.column("permission", .integer).notNull()
                 t.column("is_encrypted", .boolean).notNull()
-
+            }
+        }
+        
+        try keyQueue.write { db in
+            try db.create(table: "keys") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("key_alg", .text).notNull()
+                t.column("key", .text).notNull()
             }
         }
     }
