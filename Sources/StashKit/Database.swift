@@ -17,6 +17,20 @@ let workingDir = "\(NSHomeDirectory())/.gstash"
 let fileManager = FileManager.default
 
 
+public enum StashDBTable: String {
+    case stash = "stash"
+    case key = "key"
+}
+
+public struct Stash: Codable, FetchableRecord, PersistableRecord {
+    var id: Int64
+    var name: String
+    var content: String
+    var meta: String
+    var permission: Int
+    var isEncrypted: Bool
+}
+
 open class StashDatabase {
 
     let dbQueue: DatabaseQueue
@@ -25,9 +39,6 @@ open class StashDatabase {
     public init?() {
 
         do {
-            Logger.log("LOAD DATABASE \(workingDir)/\(dbFile)")
-            Logger.log("LOAD DATABASE \(workingDir)/\(keys)")
-
             dbQueue = try DatabaseQueue(path: "\(workingDir)/\(dbFile)")
             keyQueue = try DatabaseQueue(path: "\(workingDir)/\(keys)")
         } catch {
@@ -38,22 +49,26 @@ open class StashDatabase {
 
     public func prepareSchema() throws {
         try dbQueue.write { db in
-            try db.create(table: "stashes") { t in
+            try db.create(table: StashDBTable.stash.rawValue) { t in
                 t.autoIncrementedPrimaryKey("id")
                 t.column("name", .text).notNull()
                 t.column("content", .text).notNull()
                 t.column("meta", .text).notNull()
                 t.column("permission", .integer).notNull()
-                t.column("is_encrypted", .boolean).notNull()
+                t.column("isencrypted", .boolean).notNull()
             }
         }
         
         try keyQueue.write { db in
-            try db.create(table: "keys") { t in
+            try db.create(table: StashDBTable.key.rawValue) { t in
                 t.autoIncrementedPrimaryKey("id")
                 t.column("key_alg", .text).notNull()
                 t.column("key", .text).notNull()
             }
         }
+    }
+
+    public func insert() {
+        
     }
 }

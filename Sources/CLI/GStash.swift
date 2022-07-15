@@ -4,23 +4,7 @@ import StashKit
 
 // Initialize Command
 //
-func toolInitialize() {
-    prepareWorkDir()
-
-    guard StashDatabase() != nil else {
-        Logger.message("Failed to initialize database unit due to unkown issue.")
-        exit(1)
-    }
-
-    do {
-        try StashDatabase()?.prepareSchema()
-    } catch {
-        Logger.log("Table is already exist?")
-    }
-}
-
-func prepareWorkDir() {
-
+func prepareEnvironment() {
     guard (FileManager.default.fileExists(atPath: workingDir) == false) else {
         return
     }
@@ -31,6 +15,17 @@ func prepareWorkDir() {
         try fileManager.createDirectory(atPath: workingDir, withIntermediateDirectories: true, attributes: nil)
     } catch {
         Logger.message("Failed to create and initialize workspace.")
+    }
+
+    guard StashDatabase() != nil else {
+        Logger.message("Failed to initialize database unit due to unkown issue.")
+        exit(1)
+    }
+
+    do {
+        try StashDatabase()?.prepareSchema()
+    } catch {
+        Logger.log("Table is already exist?")
     }
 }
 

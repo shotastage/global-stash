@@ -16,7 +16,7 @@ let fileManager = FileManager.default
 
 
 Logger.log("THIS PROGRAM IS NOW UNDER CONSTRUCTION!")
-toolInitialize()
+prepareEnvironment()
 
 
 guard CommandLine.arguments.count == 2 else {
