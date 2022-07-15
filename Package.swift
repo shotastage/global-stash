@@ -23,7 +23,7 @@ let package = Package(
         .executableTarget(
             name: "CLI",
             dependencies: [
-                .product(name: "SQLite", package: "SQLite.swift"),
+                .product(name: "GRDB", package: "GRDB.swift"),
                 .target(name: "StashKit")
             ],
             path: "Sources/CLI"
@@ -31,7 +31,7 @@ let package = Package(
         .target(
             name: "StashKit",
             dependencies: [
-                .product(name: "SQLite", package: "SQLite.swift")
+                .product(name: "GRDB", package: "GRDB.swift"),
             ],
             path: "Sources/StashKit"
         ),

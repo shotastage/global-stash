@@ -48,18 +48,5 @@ open class StashStore {
             Logger.message("Failed to stash file!")
             exit(1)
         }
-
-        do {
-            try db?.insertStashes(
-                id: "",
-                file: fileName,
-                checksum: manager.calcChecksum(data: targetData!),
-                binary: "",
-                meta: "",
-                permission: 100)
-        } catch {
-            Logger.message("Failed to execute database query.")
-        }
-        
     }
 }
