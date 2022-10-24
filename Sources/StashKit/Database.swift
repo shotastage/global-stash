@@ -1,6 +1,6 @@
 //
 //  DB.swift
-//  
+//
 //
 //  Created by Shota Shimazu on 2022/07/05.
 //
@@ -31,6 +31,13 @@ public struct Stash: Codable, FetchableRecord, PersistableRecord {
     var isEncrypted: Bool
 }
 
+
+public struct Key: Codable, FetchableRecord, PersistableRecord {
+    var id: Int64
+    var key Alg: String
+    var ketStr: String
+}
+
 open class StashDatabase {
 
     let dbQueue: DatabaseQueue
@@ -58,7 +65,7 @@ open class StashDatabase {
                 t.column("isencrypted", .boolean).notNull()
             }
         }
-        
+
         try keyQueue.write { db in
             try db.create(table: StashDBTable.key.rawValue) { t in
                 t.autoIncrementedPrimaryKey("id")
@@ -69,6 +76,6 @@ open class StashDatabase {
     }
 
     public func insert() {
-        
+
     }
 }
