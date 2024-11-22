@@ -19,15 +19,17 @@ public func readInput(message: String = "") -> String {
 
 
 public func yesNo(message: String) -> Bool {
-
-    let ans = readInput(message: "\(message) [Y/N]")
-    
-    switch ans {
-    case "Yes", "yes", "Y", "y":
-            return true
-    case "No", "no", "N", "n":
-        return false
-    default:
-        return false
+    while true {
+        print("\(message) [Y/N] ", terminator: "")
+        if let ans = readLine()?.trimmingCharacters(in: .whitespacesAndNewlines) {
+            switch ans.lowercased() {
+            case "yes", "y":
+                return true
+            case "no", "n":
+                return false
+            default:
+                print("Please enter 'Y' for yes or 'N' for no.")
+            }
+        }
     }
 }
