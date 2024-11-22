@@ -15,7 +15,6 @@ open class StashStore {
     var permission: Int = 5
 
     let manager = DataManager()
-    let db = StashDatabase()
 
     public init(_ path: String) {
         fileName = path

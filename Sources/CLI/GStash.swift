@@ -5,27 +5,10 @@ import StashKit
 // Initialize Command
 //
 func prepareEnvironment() {
-    guard (FileManager.default.fileExists(atPath: workingDir) == false) else {
-        return
-    }
-
-    Logger.message("Initialize Global Stash System (GSS)...")
+    let fileManager = FileManager.default
     
-    do {
-        try fileManager.createDirectory(atPath: workingDir, withIntermediateDirectories: true, attributes: nil)
-    } catch {
-        Logger.message("Failed to create and initialize workspace.")
-    }
-
-    guard StashDatabase() != nil else {
-        Logger.message("Failed to initialize database unit due to unkown issue.")
-        exit(1)
-    }
-
-    do {
-        try StashDatabase()?.prepareSchema()
-    } catch {
-        Logger.log("Table is already exist?")
+    if fileManager.fileExists(atPath: "~/.gstash") {
+        Logger.message("Global Stasher is already initialized.")
     }
 }
 
