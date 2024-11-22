@@ -15,7 +15,14 @@ let workingDir = "\(NSHomeDirectory())/.gstash"
 let fileManager = FileManager.default
 
 
-Logger.log("THIS PROGRAM IS NOW UNDER CONSTRUCTION!")
+
+// MARK: - Message on pre-release versino
+print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+print("THIS PROGRAM IS NOW UNDER CONSTRUCTION!")
+print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+print()
+
+
 prepareEnvironment()
 
 
