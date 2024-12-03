@@ -25,5 +25,4 @@ print()
 print("Global Stasher - Version 0.1.0")
 print()
 
-prepareEnvironment()
 CLIRunner.run()

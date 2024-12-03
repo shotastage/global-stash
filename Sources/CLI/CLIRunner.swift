@@ -8,12 +8,28 @@
 import Foundation
 
 class CLIRunner {
+    static let workingDir = "\(NSHomeDirectory())/.gstash"
+
+    static func prepareEnvironment() {
+        let fileManager = FileManager.default
+
+        do {
+            try fileManager.createDirectory(atPath: workingDir,
+                                         withIntermediateDirectories: true,
+                                         attributes: nil)
+        } catch {
+            print("Error: Failed to initialize working directory")
+            exit(1)
+        }
+    }
+
     static func run() {
+        prepareEnvironment()
         guard let command = Command.parse(CommandLine.arguments) else {
             showUsage()
             exit(1)
         }
-        
+
         switch command.type {
         case .save:
             handleSave(args: command.args)
@@ -29,19 +45,19 @@ class CLIRunner {
             showHelp()
         }
     }
-    
+
     private static func showUsage() {
         print("Usage: gstash <command> [arguments]")
         print("Run 'gstash help' for more information.")
     }
-    
+
     private static func showHelp() {
         print("""
         gstash - Global Stash Tool
-        
+
         Usage:
           gstash <command> [arguments]
-        
+
         Commands:
           save, s <file>      Save a file to stash
           list, ls, l         List all stashed files
@@ -49,7 +65,7 @@ class CLIRunner {
           drop, d <id>        Remove a specific stash
           clear               Remove all stashes
           help, h             Show this help message
-        
+
         Examples:
           gstash save myfile.txt         # Stash myfile.txt
           gstash myfile.txt              # Same as above
@@ -57,7 +73,7 @@ class CLIRunner {
           gstash apply 1                 # Apply stash with ID 1
         """)
     }
-    
+
     private static func handleSave(args: [String]) {
         guard let filePath = args.first else {
             print("Error: No file specified")
@@ -66,12 +82,12 @@ class CLIRunner {
         // TODO: Implement save logic
         print("Saving file: \(filePath)")
     }
-    
+
     private static func handleList() {
         // TODO: Implement list logic
         print("Listing stashed files...")
     }
-    
+
     private static func handleApply(args: [String]) {
         guard let stashId = args.first else {
             print("Error: No stash ID specified")
@@ -80,7 +96,7 @@ class CLIRunner {
         // TODO: Implement apply logic
         print("Applying stash: \(stashId)")
     }
-    
+
     private static func handleDrop(args: [String]) {
         guard let stashId = args.first else {
             print("Error: No stash ID specified")
@@ -89,7 +105,7 @@ class CLIRunner {
         // TODO: Implement drop logic
         print("Dropping stash: \(stashId)")
     }
-    
+
     private static func handleClear() {
         // TODO: Implement clear logic
         print("Clearing all stashes...")
