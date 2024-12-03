@@ -8,6 +8,7 @@
 import Foundation
 import StashKit
 
+@MainActor
 class CLIRunner {
     static let workingDir = "\(NSHomeDirectory())/.gstash"
     
@@ -75,6 +76,7 @@ class CLIRunner {
         """)
     }
     
+    @MainActor
     private static func handleSave(args: [String]) async {
         guard let filePath = args.first else {
             print("Error: No file specified")
@@ -89,13 +91,7 @@ class CLIRunner {
             absolutePath = FileManager.default.currentDirectoryPath + "/" + filePath
         }
         
-        let stashManager: StashManager
-        do {
-            stashManager = try await StashManager(baseDirectory: workingDir)
-        } catch {
-            print("Error: Failed to initialize stash manager - \(error.localizedDescription)")
-            exit(1)
-        }
+        let stashManager = StashManager(baseDirectory: workingDir)
         
         do {
             let entry = try await stashManager.save(absolutePath)
@@ -112,10 +108,11 @@ class CLIRunner {
         }
     }
     
+    @MainActor
     private static func handleList() async {
-        let stashManager: StashManager
+        let stashManager = StashManager(baseDirectory: workingDir)
+        
         do {
-            stashManager = try await StashManager(baseDirectory: workingDir)
             let entries = try await stashManager.list()
             
             if entries.isEmpty {

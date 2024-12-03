@@ -8,6 +8,7 @@
 import Foundation
 import LocalAuthentication
 
+@MainActor
 public class StashManager {
     private let baseDirectory: String
     private let fileManager: FileManager

@@ -9,6 +9,7 @@ import Foundation
 import Security
 import LocalAuthentication
 
+@MainActor
 public class KeychainManager {
     private let service = "com.gstash.encryption"
     private let account = "gstash-key"
@@ -36,11 +37,6 @@ public class KeychainManager {
     }
     
     public func loadKey() async throws -> String {
-        try await authenticateWithTouchID()
-        return try retrieveKeyFromKeychain()
-    }
-    
-    private func authenticateWithTouchID() async throws {
         let context = LAContext()
         var error: NSError?
         
@@ -48,18 +44,18 @@ public class KeychainManager {
             throw KeychainError.biometryNotAvailable
         }
         
-        return try await withCheckedThrowingContinuation { continuation in
-            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics,
-                                 localizedReason: "認証が必要です") { success, error in
-                if success {
-                    continuation.resume()
-                } else if let error = error {
-                    continuation.resume(throwing: KeychainError.authenticationFailed(error))
-                } else {
-                    continuation.resume(throwing: KeychainError.unknown)
-                }
-            }
+        // TouchID認証を実行
+        let success = try await context.evaluatePolicy(
+            .deviceOwnerAuthenticationWithBiometrics,
+            localizedReason: "認証が必要です"
+        )
+        
+        guard success else {
+            throw KeychainError.authenticationFailed(KeychainError.unknown)
         }
+        
+        // キーチェーンからキーを取得
+        return try retrieveKeyFromKeychain()
     }
     
     private func retrieveKeyFromKeychain() throws -> String {
