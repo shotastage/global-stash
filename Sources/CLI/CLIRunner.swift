@@ -6,13 +6,14 @@
 //
 
 import Foundation
+import StashKit
 
 class CLIRunner {
     static let workingDir = "\(NSHomeDirectory())/.gstash"
-
+    
     static func prepareEnvironment() {
         let fileManager = FileManager.default
-
+        
         do {
             try fileManager.createDirectory(atPath: workingDir,
                                          withIntermediateDirectories: true,
@@ -22,14 +23,14 @@ class CLIRunner {
             exit(1)
         }
     }
-
+    
     static func run() {
         prepareEnvironment()
         guard let command = Command.parse(CommandLine.arguments) else {
             showUsage()
             exit(1)
         }
-
+        
         switch command.type {
         case .save:
             handleSave(args: command.args)
@@ -45,19 +46,19 @@ class CLIRunner {
             showHelp()
         }
     }
-
+    
     private static func showUsage() {
         print("Usage: gstash <command> [arguments]")
         print("Run 'gstash help' for more information.")
     }
-
+    
     private static func showHelp() {
         print("""
         gstash - Global Stash Tool
-
+        
         Usage:
           gstash <command> [arguments]
-
+        
         Commands:
           save, s <file>      Save a file to stash
           list, ls, l         List all stashed files
@@ -65,7 +66,7 @@ class CLIRunner {
           drop, d <id>        Remove a specific stash
           clear               Remove all stashes
           help, h             Show this help message
-
+        
         Examples:
           gstash save myfile.txt         # Stash myfile.txt
           gstash myfile.txt              # Same as above
@@ -73,21 +74,84 @@ class CLIRunner {
           gstash apply 1                 # Apply stash with ID 1
         """)
     }
-
+    
     private static func handleSave(args: [String]) {
         guard let filePath = args.first else {
             print("Error: No file specified")
             exit(1)
         }
-        // TODO: Implement save logic
-        print("Saving file: \(filePath)")
+        
+        // 絶対パスに変換
+        let absolutePath: String
+        if filePath.hasPrefix("/") {
+            absolutePath = filePath
+        } else {
+            absolutePath = FileManager.default.currentDirectoryPath + "/" + filePath
+        }
+        
+        let stashManager: StashManager
+        do {
+            stashManager = try StashManager(baseDirectory: workingDir)
+        } catch {
+            print("Error: Failed to initialize stash manager - \(error.localizedDescription)")
+            exit(1)
+        }
+        
+        do {
+            let entry = try stashManager.save(absolutePath)
+            print("Successfully stashed file:")
+            print("  ID: \(entry.id)")
+            print("  Original path: \(entry.originalPath)")
+            print("  Checksum: \(entry.checksum)")
+        } catch StashError.fileNotFound {
+            print("Error: File not found - \(filePath)")
+            exit(1)
+        } catch {
+            print("Error: Failed to stash file - \(error.localizedDescription)")
+            exit(1)
+        }
     }
-
+    
     private static func handleList() {
-        // TODO: Implement list logic
-        print("Listing stashed files...")
+        let stashManager: StashManager
+        do {
+            stashManager = try StashManager(baseDirectory: workingDir)
+            let entries = try stashManager.list()
+            
+            if entries.isEmpty {
+                print("No stashed files found.")
+                return
+            }
+            
+            // ヘッダーを表示
+            print("Stashed files:")
+            print(String(repeating: "-", count: 80))
+            print(String(format: "%-12s  %-19s  %-35s  %s", "STASH ID", "DATE", "ORIGINAL PATH", "CHECKSUM"))
+            print(String(repeating: "-", count: 80))
+            
+            // エントリを表示
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            
+            for entry in entries {
+                let date = dateFormatter.string(from: entry.timestamp)
+                let checksumPrefix = String(entry.checksum.prefix(8)) // チェックサムの最初の8文字のみ表示
+                
+                print(String(format: "%-12s  %-19s  %-35s  %s",
+                    entry.id,
+                    date,
+                    entry.originalPath,
+                    checksumPrefix
+                ))
+            }
+            print(String(repeating: "-", count: 80))
+            
+        } catch {
+            print("Error: Failed to list stashed files - \(error.localizedDescription)")
+            exit(1)
+        }
     }
-
+    
     private static func handleApply(args: [String]) {
         guard let stashId = args.first else {
             print("Error: No stash ID specified")
@@ -96,7 +160,7 @@ class CLIRunner {
         // TODO: Implement apply logic
         print("Applying stash: \(stashId)")
     }
-
+    
     private static func handleDrop(args: [String]) {
         guard let stashId = args.first else {
             print("Error: No stash ID specified")
@@ -105,7 +169,7 @@ class CLIRunner {
         // TODO: Implement drop logic
         print("Dropping stash: \(stashId)")
     }
-
+    
     private static func handleClear() {
         // TODO: Implement clear logic
         print("Clearing all stashes...")
