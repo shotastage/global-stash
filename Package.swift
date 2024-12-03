@@ -5,6 +5,9 @@ import PackageDescription
 
 let package = Package(
     name: "gstash",
+    platforms: [
+        .macOS(.v10_15)
+    ],
     products: [
         .executable(name: "gstash", targets: ["CLI"]),
         .library(

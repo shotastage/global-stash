@@ -7,13 +7,13 @@
 
 import Foundation
 import Security
+import LocalAuthentication
 
 public class KeychainManager {
     private let service = "com.gstash.encryption"
     private let account = "gstash-key"
     
     public func saveKey(_ key: String) throws {
-        // Delete existing key
         try deleteKey()
         
         guard let data = key.data(using: .utf8) else {
@@ -25,7 +25,8 @@ public class KeychainManager {
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
             kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked,
+            kSecAttrSynchronizable as String: kCFBooleanFalse as Any
         ]
         
         let status = SecItemAdd(query as CFDictionary, nil)
@@ -34,12 +35,41 @@ public class KeychainManager {
         }
     }
     
-    public func loadKey() throws -> String {
+    public func loadKey() async throws -> String {
+        try await authenticateWithTouchID()
+        return try retrieveKeyFromKeychain()
+    }
+    
+    private func authenticateWithTouchID() async throws {
+        let context = LAContext()
+        var error: NSError?
+        
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+            throw KeychainError.biometryNotAvailable
+        }
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics,
+                                 localizedReason: "認証が必要です") { success, error in
+                if success {
+                    continuation.resume()
+                } else if let error = error {
+                    continuation.resume(throwing: KeychainError.authenticationFailed(error))
+                } else {
+                    continuation.resume(throwing: KeychainError.unknown)
+                }
+            }
+        }
+    }
+    
+    private func retrieveKeyFromKeychain() throws -> String {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
-            kSecReturnData as String: true
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecAttrSynchronizable as String: kCFBooleanFalse as Any
         ]
         
         var result: AnyObject?
@@ -58,7 +88,8 @@ public class KeychainManager {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: account
+            kSecAttrAccount as String: account,
+            kSecAttrSynchronizable as String: kCFBooleanFalse as Any
         ]
         
         let status = SecItemDelete(query as CFDictionary)
@@ -73,6 +104,9 @@ public enum KeychainError: Error {
     case saveFailed(status: OSStatus)
     case loadFailed(status: OSStatus)
     case deleteFailed(status: OSStatus)
+    case biometryNotAvailable
+    case authenticationFailed(Error)
+    case unknown
     
     var description: String {
         switch self {
@@ -84,6 +118,12 @@ public enum KeychainError: Error {
             return "Failed to load key from Keychain: \(status)"
         case .deleteFailed(let status):
             return "Failed to delete key from Keychain: \(status)"
+        case .biometryNotAvailable:
+            return "Touch ID/Face ID is not available on this device"
+        case .authenticationFailed(let error):
+            return "Authentication failed: \(error.localizedDescription)"
+        case .unknown:
+            return "An unknown error occurred"
         }
     }
 }

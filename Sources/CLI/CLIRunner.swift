@@ -24,7 +24,7 @@ class CLIRunner {
         }
     }
     
-    static func run() {
+    static func run() async {
         prepareEnvironment()
         guard let command = Command.parse(CommandLine.arguments) else {
             showUsage()
@@ -33,9 +33,9 @@ class CLIRunner {
         
         switch command.type {
         case .save:
-            handleSave(args: command.args)
+            await handleSave(args: command.args)
         case .list:
-            handleList()
+            await handleList()
         case .apply:
             handleApply(args: command.args)
         case .drop:
@@ -75,7 +75,7 @@ class CLIRunner {
         """)
     }
     
-    private static func handleSave(args: [String]) {
+    private static func handleSave(args: [String]) async {
         guard let filePath = args.first else {
             print("Error: No file specified")
             exit(1)
@@ -91,14 +91,14 @@ class CLIRunner {
         
         let stashManager: StashManager
         do {
-            stashManager = try StashManager(baseDirectory: workingDir)
+            stashManager = try await StashManager(baseDirectory: workingDir)
         } catch {
             print("Error: Failed to initialize stash manager - \(error.localizedDescription)")
             exit(1)
         }
         
         do {
-            let entry = try stashManager.save(absolutePath)
+            let entry = try await stashManager.save(absolutePath)
             print("Successfully stashed file:")
             print("  ID: \(entry.id)")
             print("  Original path: \(entry.originalPath)")
@@ -112,11 +112,11 @@ class CLIRunner {
         }
     }
     
-    private static func handleList() {
+    private static func handleList() async {
         let stashManager: StashManager
         do {
-            stashManager = try StashManager(baseDirectory: workingDir)
-            let entries = try stashManager.list()
+            stashManager = try await StashManager(baseDirectory: workingDir)
+            let entries = try await stashManager.list()
             
             if entries.isEmpty {
                 print("No stashed files found.")
