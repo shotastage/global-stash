@@ -1,3 +1,10 @@
+//
+//  GStash.swift
+//  gstash
+//
+//  Created by Shota Shimazu on 2024/12/03.
+//
+
 import Foundation
 import StashKit
 
