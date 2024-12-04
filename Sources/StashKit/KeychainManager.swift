@@ -44,18 +44,25 @@ public class KeychainManager {
             throw KeychainError.biometryNotAvailable
         }
         
-        // TouchID認証を実行
-        let success = try await context.evaluatePolicy(
-            .deviceOwnerAuthenticationWithBiometrics,
-            localizedReason: "認証が必要です"
-        )
-        
-        guard success else {
-            throw KeychainError.authenticationFailed(KeychainError.unknown)
+        return try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.main.async {
+                context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics,
+                                     localizedReason: "認証が必要です") { success, error in
+                    if success {
+                        do {
+                            let key = try self.retrieveKeyFromKeychain()
+                            continuation.resume(returning: key)
+                        } catch {
+                            continuation.resume(throwing: error)
+                        }
+                    } else if let error = error {
+                        continuation.resume(throwing: KeychainError.authenticationFailed(error))
+                    } else {
+                        continuation.resume(throwing: KeychainError.unknown)
+                    }
+                }
+            }
         }
-        
-        // キーチェーンからキーを取得
-        return try retrieveKeyFromKeychain()
     }
     
     private func retrieveKeyFromKeychain() throws -> String {
