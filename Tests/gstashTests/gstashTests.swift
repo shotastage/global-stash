@@ -23,7 +23,7 @@ final class gstashTests: XCTestCase {
 
     XCTAssertEqual(process.terminationStatus, 0)
     XCTAssertTrue(output?.contains("gstash - Global Stash Tool") == true)
-    XCTAssertTrue(output?.contains("Usage:") == true)
+    XCTAssertTrue(output?.localizedCaseInsensitiveContains("usage:") == true)
         #endif
     }
 

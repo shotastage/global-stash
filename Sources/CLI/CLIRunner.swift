@@ -32,55 +32,8 @@ enum CLIRunner {
         }
     }
     
-    static func run() async {
+    static func handleSave(filePath: String) async {
         prepareEnvironment()
-        let command = Command.parse(CommandLine.arguments)
-        
-        switch command.type {
-        case .save:
-            await handleSave(args: command.args)
-        case .list:
-            await handleList()
-        case .apply:
-            handleApply(args: command.args)
-        case .drop:
-            handleDrop(args: command.args)
-        case .clear:
-            handleClear()
-        case .help:
-            showHelp()
-        }
-    }
-    
-    private static func showHelp() {
-        print("""
-        gstash - Global Stash Tool
-        
-        Usage:
-          gstash <command> [arguments]
-        
-        Commands:
-          save, s <file>      Save a file to stash
-          list, ls, l         List all stashed files
-          apply, a <id>       Apply a stash
-          drop, d <id>        Remove a specific stash
-          clear               Remove all stashes
-          help, h             Show this help message
-        
-        Examples:
-          gstash save myfile.txt         # Stash myfile.txt
-          gstash myfile.txt              # Same as above
-          gstash list                    # List all stashes
-          gstash apply 1                 # Apply stash with ID 1
-        """)
-    }
-
-    private static func handleSave(args: [String]) async {
-        guard let filePath = args.first else {
-            print("Error: No file specified")
-            exit(1)
-        }
-
         let stashManager = StashManager(baseDirectory: workingDirectory.path)
         
         do {
@@ -98,7 +51,8 @@ enum CLIRunner {
         }
     }
 
-    private static func handleList() async {
+    static func handleList() async {
+        prepareEnvironment()
         let stashManager = StashManager(baseDirectory: workingDirectory.path)
         
         do {
@@ -136,25 +90,20 @@ enum CLIRunner {
         }
     }
     
-    private static func handleApply(args: [String]) {
-        guard let stashId = args.first else {
-            print("Error: No stash ID specified")
-            exit(1)
-        }
+    static func handleApply(stashId: String) {
+        prepareEnvironment()
         // TODO: Implement apply logic
         print("Applying stash: \(stashId)")
     }
     
-    private static func handleDrop(args: [String]) {
-        guard let stashId = args.first else {
-            print("Error: No stash ID specified")
-            exit(1)
-        }
+    static func handleDrop(stashId: String) {
+        prepareEnvironment()
         // TODO: Implement drop logic
         print("Dropping stash: \(stashId)")
     }
     
-    private static func handleClear() {
+    static func handleClear() {
+        prepareEnvironment()
         // TODO: Implement clear logic
         print("Clearing all stashes...")
     }
