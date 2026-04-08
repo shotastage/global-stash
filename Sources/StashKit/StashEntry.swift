@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct StashEntry {
+public struct StashEntry: Codable, Sendable {
     public let id: String
     public let originalPath: String
     public let timestamp: Date

@@ -10,16 +10,28 @@ import XCTest
 
 
 final class CryptTests: XCTestCase {
-    func testSha256Sum() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        
+    func testGenerateSecretKeyProducesUniqueKeys() throws {
+        var keys = Set<String>()
 
-        let crypt = FileCrypt()
-        
-        for _ in 0...100 {
-            XCTAssertNotEqual(crypt.genSecretkey(256), crypt.genSecretkey(256))
+        for _ in 0..<100 {
+            let key = try FileCrypt.generateSecretKey(32)
+            XCTAssertEqual(key.count, 32)
+            XCTAssertTrue(key.contains(where: { "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".contains($0) }))
+            XCTAssertTrue(key.contains(where: { "0123456789".contains($0) }))
+            XCTAssertTrue(key.contains(where: { "~!@#$%^&*()-+_}]{[?/>.<,".contains($0) }))
+            keys.insert(key)
         }
+
+        XCTAssertEqual(keys.count, 100)
+    }
+
+    func testEncryptDecryptRoundTrip() throws {
+        let key = try FileCrypt.generateSecretKey(32)
+        let original = Data("swift-6.3".utf8)
+
+        let encrypted = try FileCrypt.encrypt(original, with: key)
+        let decrypted = try FileCrypt.decrypt(encrypted, with: key)
+
+        XCTAssertEqual(decrypted, original)
     }
 }

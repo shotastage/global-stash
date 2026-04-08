@@ -6,13 +6,14 @@
 //
 
 import Foundation
-import Security
 import LocalAuthentication
+import Security
 
-@MainActor
-public class KeychainManager {
+public final class KeychainManager: Sendable {
     private let service = "com.gstash.encryption"
     private let account = "gstash-key"
+
+    public init() {}
     
     public func saveKey(_ key: String) throws {
         try deleteKey()
@@ -43,23 +44,23 @@ public class KeychainManager {
         guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
             throw KeychainError.biometryNotAvailable
         }
-        
-        return try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.main.async {
-                context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics,
-                                     localizedReason: "認証が必要です") { success, error in
-                    if success {
-                        do {
-                            let key = try self.retrieveKeyFromKeychain()
-                            continuation.resume(returning: key)
-                        } catch {
-                            continuation.resume(throwing: error)
-                        }
-                    } else if let error = error {
-                        continuation.resume(throwing: KeychainError.authenticationFailed(error))
-                    } else {
-                        continuation.resume(throwing: KeychainError.unknown)
-                    }
+
+        try await evaluateAccessPolicy(using: context)
+        return try retrieveKeyFromKeychain()
+    }
+
+    private func evaluateAccessPolicy(using context: LAContext) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            context.evaluatePolicy(
+                .deviceOwnerAuthenticationWithBiometrics,
+                localizedReason: "認証が必要です"
+            ) { success, error in
+                if success {
+                    continuation.resume()
+                } else if let error {
+                    continuation.resume(throwing: KeychainError.authenticationFailed(error))
+                } else {
+                    continuation.resume(throwing: KeychainError.unknown)
                 }
             }
         }
@@ -102,7 +103,7 @@ public class KeychainManager {
     }
 }
 
-public enum KeychainError: Error {
+public enum KeychainError: Error, LocalizedError, CustomStringConvertible {
     case encodingFailed
     case saveFailed(status: OSStatus)
     case loadFailed(status: OSStatus)
@@ -111,7 +112,7 @@ public enum KeychainError: Error {
     case authenticationFailed(Error)
     case unknown
     
-    var description: String {
+    public var errorDescription: String? {
         switch self {
         case .encodingFailed:
             return "Failed to encode key data"
@@ -128,5 +129,9 @@ public enum KeychainError: Error {
         case .unknown:
             return "An unknown error occurred"
         }
+    }
+
+    public var description: String {
+        errorDescription ?? "Unknown keychain error"
     }
 }

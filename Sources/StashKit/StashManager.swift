@@ -6,18 +6,16 @@
 //
 
 import Foundation
-import LocalAuthentication
 
-@MainActor
-public class StashManager {
-    private let baseDirectory: String
+public actor StashManager {
+    private let baseDirectoryURL: URL
     private let fileManager: FileManager
     private let dataManager: DataManager
     private let keychain: KeychainManager
     private var secretKey: String?
     
     public init(baseDirectory: String) {
-        self.baseDirectory = baseDirectory
+        self.baseDirectoryURL = URL(fileURLWithPath: baseDirectory, isDirectory: true)
         self.fileManager = FileManager.default
         self.dataManager = DataManager()
         self.keychain = KeychainManager()
@@ -32,33 +30,20 @@ public class StashManager {
     public func list() async throws -> [StashEntry] {
         try await ensureAuthenticated()
         
-        let metadataDir = "\(baseDirectory)/metadata"
-        guard fileManager.fileExists(atPath: metadataDir) else {
+        let metadataDirectoryURL = baseDirectoryURL.appendingPathComponent("metadata", isDirectory: true)
+        guard fileManager.fileExists(atPath: metadataDirectoryURL.path) else {
             return []
         }
         
-        let metadataFiles = try fileManager.contentsOfDirectory(atPath: metadataDir)
-            .filter { $0.hasSuffix(".json") }
-        
-        return try metadataFiles.compactMap { file -> StashEntry? in
-            let filePath = "\(metadataDir)/\(file)"
-            let data = try Data(contentsOf: URL(fileURLWithPath: filePath))
-            
-            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let id = json["id"] as? String,
-                  let originalPath = json["originalPath"] as? String,
-                  let timestamp = json["timestamp"] as? TimeInterval,
-                  let checksum = json["checksum"] as? String else {
-                return nil
-            }
-            
-            return StashEntry(
-                id: id,
-                originalPath: originalPath,
-                timestamp: Date(timeIntervalSince1970: timestamp),
-                checksum: checksum
-            )
-        }.sorted(by: { $0.timestamp > $1.timestamp })
+        let metadataFiles = try fileManager.contentsOfDirectory(
+            at: metadataDirectoryURL,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ).filter { $0.pathExtension == "json" }
+
+        return try metadataFiles
+            .map(decodeMetadata)
+            .sorted(by: { $0.timestamp > $1.timestamp })
     }
     
     public func save(_ filePath: String) async throws -> StashEntry {
@@ -66,31 +51,40 @@ public class StashManager {
         guard let key = secretKey else {
             throw StashError.authenticationRequired
         }
+
+        let sourceURL = URL(fileURLWithPath: filePath).standardizedFileURL
         
-        guard fileManager.fileExists(atPath: filePath) else {
+        guard fileManager.fileExists(atPath: sourceURL.path) else {
             throw StashError.fileNotFound
         }
         
-        let stashesDir = "\(baseDirectory)/stashes"
-        try fileManager.createDirectory(atPath: stashesDir,
-                                     withIntermediateDirectories: true,
-                                     attributes: nil)
+        let stashesDirectoryURL = baseDirectoryURL.appendingPathComponent("stashes", isDirectory: true)
+        try fileManager.createDirectory(
+            at: stashesDirectoryURL,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
         
         let timestamp = Date()
-        let id = generateStashId(timestamp: timestamp)
+        let id = generateStashID(from: timestamp)
         
-        guard let fileData = dataManager.readDataFromFile(filePath) else {
+        guard let fileData = dataManager.readDataFromFile(sourceURL.path) else {
             throw StashError.readError
         }
         
         let checksum = dataManager.calcChecksum(data: fileData)
         let encryptedData = try FileCrypt.encrypt(fileData, with: key)
-        let stashPath = "\(stashesDir)/\(id)"
-        try encryptedData.write(to: URL(fileURLWithPath: stashPath))
+
+        do {
+            let stashURL = stashesDirectoryURL.appendingPathComponent(id, isDirectory: false)
+            try encryptedData.write(to: stashURL, options: .atomic)
+        } catch {
+            throw StashError.writeError
+        }
         
         let entry = StashEntry(
             id: id,
-            originalPath: filePath,
+            originalPath: sourceURL.path,
             timestamp: timestamp,
             checksum: checksum
         )
@@ -99,39 +93,63 @@ public class StashManager {
         return entry
     }
     
-    private func generateStashId(timestamp: Date) -> String {
+    private func decodeMetadata(from fileURL: URL) throws -> StashEntry {
+        do {
+            let data = try Data(contentsOf: fileURL)
+            return try Self.makeMetadataDecoder().decode(StashEntry.self, from: data)
+        } catch {
+            throw StashError.metadataError
+        }
+    }
+
+    private func generateStashID(from timestamp: Date) -> String {
         let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
         formatter.dateFormat = "yyyyMMdd_HHmmss"
         return formatter.string(from: timestamp)
     }
     
     private func saveMetadata(_ entry: StashEntry) throws {
-        let metadataDir = "\(baseDirectory)/metadata"
-        try fileManager.createDirectory(atPath: metadataDir,
-                                     withIntermediateDirectories: true,
-                                     attributes: nil)
-        
-        let metadata: [String: Any] = [
-            "id": entry.id,
-            "originalPath": entry.originalPath,
-            "timestamp": entry.timestamp.timeIntervalSince1970,
-            "checksum": entry.checksum
-        ]
-        
-        let metadataPath = "\(metadataDir)/\(entry.id).json"
-        let jsonData = try JSONSerialization.data(withJSONObject: metadata, options: .prettyPrinted)
-        try jsonData.write(to: URL(fileURLWithPath: metadataPath))
+        let metadataDirectoryURL = baseDirectoryURL.appendingPathComponent("metadata", isDirectory: true)
+        try fileManager.createDirectory(
+            at: metadataDirectoryURL,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+
+        do {
+            let metadataURL = metadataDirectoryURL.appendingPathComponent("\(entry.id).json", isDirectory: false)
+            let jsonData = try Self.makeMetadataEncoder().encode(entry)
+            try jsonData.write(to: metadataURL, options: .atomic)
+        } catch {
+            throw StashError.metadataError
+        }
+    }
+
+    private static func makeMetadataDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        return decoder
+    }
+
+    private static func makeMetadataEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return encoder
     }
 }
 
-public enum StashError: Error {
+public enum StashError: Error, LocalizedError, CustomStringConvertible {
     case fileNotFound
     case readError
     case writeError
     case metadataError
     case authenticationRequired
     
-    public var description: String {
+    public var errorDescription: String? {
         switch self {
         case .fileNotFound:
             return "Specified file not found"
@@ -144,5 +162,9 @@ public enum StashError: Error {
         case .authenticationRequired:
             return "Authentication required"
         }
+    }
+
+    public var description: String {
+        errorDescription ?? "Unknown stash error"
     }
 }

@@ -1,27 +1,19 @@
 import XCTest
-import class Foundation.Bundle
+import Foundation
 
 final class gstashTests: XCTestCase {
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-
-        // Some of the APIs that we use below are available in macOS 10.13 and above.
-        guard #available(macOS 10.13, *) else {
-            return
-        }
-
-        // Mac Catalyst won't have `Process`, but it is supported for executables.
+  func testHelpOutputIncludesUsage() throws {
         #if !targetEnvironment(macCatalyst)
 
-        let fooBinary = productsDirectory.appendingPathComponent("gstash")
+    let gstashBinary = productsDirectory.appendingPathComponent("gstash")
 
         let process = Process()
-        process.executableURL = fooBinary
+    process.executableURL = gstashBinary
+    process.arguments = ["help"]
 
         let pipe = Pipe()
         process.standardOutput = pipe
+    process.standardError = pipe
 
         try process.run()
         process.waitUntilExit()
@@ -29,7 +21,9 @@ final class gstashTests: XCTestCase {
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         let output = String(data: data, encoding: .utf8)
 
-        XCTAssertEqual(output, "Hello, world!\n")
+    XCTAssertEqual(process.terminationStatus, 0)
+    XCTAssertTrue(output?.contains("gstash - Global Stash Tool") == true)
+    XCTAssertTrue(output?.contains("Usage:") == true)
         #endif
     }
 

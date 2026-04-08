@@ -8,17 +8,24 @@
 import Foundation
 import StashKit
 
-@MainActor
-class CLIRunner {
-    static let workingDir = "\(NSHomeDirectory())/.gstash"
+enum CLIRunner {
+    private static let workingDirectory = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+        .appendingPathComponent(".gstash", isDirectory: true)
+    private static let listColumnWidths = [15, 19, 35, 8]
+    private static let listSeparator = String(
+        repeating: "-",
+        count: listColumnWidths.reduce(0, +) + ((listColumnWidths.count - 1) * 2)
+    )
     
     static func prepareEnvironment() {
         let fileManager = FileManager.default
         
         do {
-            try fileManager.createDirectory(atPath: workingDir,
-                                         withIntermediateDirectories: true,
-                                         attributes: nil)
+            try fileManager.createDirectory(
+                at: workingDirectory,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
         } catch {
             print("Error: Failed to initialize working directory")
             exit(1)
@@ -27,10 +34,7 @@ class CLIRunner {
     
     static func run() async {
         prepareEnvironment()
-        guard let command = Command.parse(CommandLine.arguments) else {
-            showUsage()
-            exit(1)
-        }
+        let command = Command.parse(CommandLine.arguments)
         
         switch command.type {
         case .save:
@@ -46,11 +50,6 @@ class CLIRunner {
         case .help:
             showHelp()
         }
-    }
-    
-    private static func showUsage() {
-        print("Usage: gstash <command> [arguments]")
-        print("Run 'gstash help' for more information.")
     }
     
     private static func showHelp() {
@@ -75,26 +74,17 @@ class CLIRunner {
           gstash apply 1                 # Apply stash with ID 1
         """)
     }
-    
-    @MainActor
+
     private static func handleSave(args: [String]) async {
         guard let filePath = args.first else {
             print("Error: No file specified")
             exit(1)
         }
-        
-        // 絶対パスに変換
-        let absolutePath: String
-        if filePath.hasPrefix("/") {
-            absolutePath = filePath
-        } else {
-            absolutePath = FileManager.default.currentDirectoryPath + "/" + filePath
-        }
-        
-        let stashManager = StashManager(baseDirectory: workingDir)
+
+        let stashManager = StashManager(baseDirectory: workingDirectory.path)
         
         do {
-            let entry = try await stashManager.save(absolutePath)
+            let entry = try await stashManager.save(resolvedPath(for: filePath))
             print("Successfully stashed file:")
             print("  ID: \(entry.id)")
             print("  Original path: \(entry.originalPath)")
@@ -107,10 +97,9 @@ class CLIRunner {
             exit(1)
         }
     }
-    
-    @MainActor
+
     private static func handleList() async {
-        let stashManager = StashManager(baseDirectory: workingDir)
+        let stashManager = StashManager(baseDirectory: workingDirectory.path)
         
         do {
             let entries = try await stashManager.list()
@@ -120,29 +109,27 @@ class CLIRunner {
                 return
             }
             
-            // ヘッダーを表示
             print("Stashed files:")
-            print(String(repeating: "-", count: 80))
-            print(String(format: "%-12s  %-19s  %-35s  %s", "STASH ID", "DATE", "ORIGINAL PATH", "CHECKSUM"))
-            print(String(repeating: "-", count: 80))
-            
-            // エントリを表示
+            print(listSeparator)
+            print(tableRow(["STASH ID", "DATE", "ORIGINAL PATH", "CHECKSUM"]))
+            print(listSeparator)
+
             let dateFormatter = DateFormatter()
+            dateFormatter.calendar = Calendar(identifier: .gregorian)
+            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
             dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             
             for entry in entries {
-                let date = dateFormatter.string(from: entry.timestamp)
-                let checksumPrefix = String(entry.checksum.prefix(8)) // チェックサムの最初の8文字のみ表示
-                
-                print(String(format: "%-12s  %-19s  %-35s  %s",
-                    entry.id,
-                    date,
-                    entry.originalPath,
-                    checksumPrefix
-                ))
+                print(
+                    tableRow([
+                        entry.id,
+                        dateFormatter.string(from: entry.timestamp),
+                        entry.originalPath,
+                        String(entry.checksum.prefix(8))
+                    ])
+                )
             }
-            print(String(repeating: "-", count: 80))
-            
+            print(listSeparator)
         } catch {
             print("Error: Failed to list stashed files - \(error.localizedDescription)")
             exit(1)
@@ -170,5 +157,40 @@ class CLIRunner {
     private static func handleClear() {
         // TODO: Implement clear logic
         print("Clearing all stashes...")
+    }
+
+    private static func resolvedPath(for filePath: String) -> String {
+        if filePath.hasPrefix("/") {
+            return URL(fileURLWithPath: filePath).standardizedFileURL.path
+        }
+
+        let currentDirectoryURL = URL(
+            fileURLWithPath: FileManager.default.currentDirectoryPath,
+            isDirectory: true
+        )
+
+        return currentDirectoryURL.appendingPathComponent(filePath).standardizedFileURL.path
+    }
+
+    private static func tableRow(_ columns: [String]) -> String {
+        zip(columns, listColumnWidths)
+            .map { padded($0.0, to: $0.1) }
+            .joined(separator: "  ")
+    }
+
+    private static func padded(_ value: String, to width: Int) -> String {
+        guard width > 0 else {
+            return ""
+        }
+
+        if value.count > width {
+            if width <= 3 {
+                return String(value.prefix(width))
+            }
+
+            return String(value.prefix(width - 3)) + "..."
+        }
+
+        return value.padding(toLength: width, withPad: " ", startingAt: 0)
     }
 }

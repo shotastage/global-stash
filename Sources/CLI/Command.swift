@@ -9,7 +9,7 @@ struct Command {
     let type: CommandType
     let args: [String]
     
-    static func parse(_ arguments: [String]) -> Command? {
+    static func parse(_ arguments: [String]) -> Command {
         guard arguments.count > 1 else {
             return Command(type: .help, args: [])
         }

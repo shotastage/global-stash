@@ -173,7 +173,7 @@ public final class FileCrypt {
     }
 }
 
-public enum CryptError: Error {
+public enum CryptError: Error, LocalizedError, CustomStringConvertible {
     case invalidKeyLength
     case insufficientKeyLength
     case randomGenerationFailed
@@ -181,7 +181,7 @@ public enum CryptError: Error {
     case encryptionFailed
     case decryptionFailed
     
-    public var description: String {
+    public var errorDescription: String? {
         switch self {
         case .invalidKeyLength:
             return "Key length must be greater than 0"
@@ -196,5 +196,9 @@ public enum CryptError: Error {
         case .decryptionFailed:
             return "Failed to decrypt data"
         }
+    }
+
+    public var description: String {
+        errorDescription ?? "Unknown cryptography error"
     }
 }
